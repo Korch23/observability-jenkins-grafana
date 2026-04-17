@@ -1,0 +1,911 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 20,
+      "title": "Global",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Taxa de sucesso de builds Jenkins em todos os namespaces e ambientes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#E02F44", "value": 0 },
+              { "color": "#FF9830", "value": 50 },
+              { "color": "#73BF69", "value": 80 },
+              { "color": "#56A64B", "value": 95 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> keep(columns: [\"_time\", \"build_result\"])\n  |> map(fn: (r) => ({ _time: r._time, _value: if r.build_result == \"SUCCESS\" then 1.0 else 0.0 }))\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _value: r._value * 100.0 }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Global - Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Contagem de builds Jenkins por resultado em todos os namespaces e ambientes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "UNSTABLE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ABORTED" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#8E8E8E", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "displayMode": "gradient",
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> group(columns: [\"build_result\"])\n  |> count()\n  |> group()\n  |> keep(columns: [\"build_result\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "Global - Job Count",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              { "fieldName": "build_result", "handlerKey": "field.name" },
+              { "fieldName": "_value", "handlerKey": "field.value" }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 21,
+      "title": "Production",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Taxa de sucesso de builds de production em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#E02F44", "value": 0 },
+              { "color": "#FF9830", "value": 50 },
+              { "color": "#73BF69", "value": 80 },
+              { "color": "#56A64B", "value": 95 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 10 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /production/)\n  |> keep(columns: [\"_time\", \"build_result\"])\n  |> map(fn: (r) => ({ _time: r._time, _value: if r.build_result == \"SUCCESS\" then 1.0 else 0.0 }))\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _value: r._value * 100.0 }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Production - Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Contagem de builds de production por resultado em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "UNSTABLE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ABORTED" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#8E8E8E", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 10 },
+      "id": 4,
+      "options": {
+        "displayMode": "gradient",
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /production/)\n  |> group(columns: [\"build_result\"])\n  |> count()\n  |> group()\n  |> keep(columns: [\"build_result\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "Production - Job Count",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              { "fieldName": "build_result", "handlerKey": "field.name" },
+              { "fieldName": "_value", "handlerKey": "field.value" }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Falhas em jobs delivery-*-production ao longo do tempo, agrupadas por servico, em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 18 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "import \"strings\"\n\nfrom(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /^delivery-/)\n  |> filter(fn: (r) => r.project_name =~ /production/)\n  |> filter(fn: (r) => r.build_result == \"FAILURE\")\n  |> map(fn: (r) => ({ r with service: strings.split(v: r.project_path, t: \"/\")[1] }))\n  |> keep(columns: [\"_time\", \"service\"])\n  |> map(fn: (r) => ({ _time: r._time, service: r.service, _value: 1.0 }))\n  |> group(columns: [\"service\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "Production - Delivery Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Duracao media dos jobs delivery-*-production e deploy-*-production em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": 3600000,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": 0 }]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "delivery - SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "delivery - FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "deploy - SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "deploy - FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_time\")\n  |> filter(fn: (r) => r.project_name =~ /production/)\n  |> filter(fn: (r) => r.project_name =~ /^(delivery-|deploy-)/)\n  |> filter(fn: (r) => r.build_result == \"SUCCESS\" or r.build_result == \"FAILURE\")\n  |> map(fn: (r) => ({\n      _time: r._time,\n      _value: float(v: r._value),\n      category: (if r.project_name =~ /^delivery-/ then \"delivery\" else \"deploy\") + \" - \" + r.build_result\n  }))\n  |> group(columns: [\"category\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: true)",
+          "refId": "A"
+        }
+      ],
+      "title": "Production - Mean Time to Delivery & Deploy",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
+      "id": 22,
+      "title": "HML / Homologação",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Taxa de sucesso de builds de homolog em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#E02F44", "value": 0 },
+              { "color": "#FF9830", "value": 50 },
+              { "color": "#73BF69", "value": 80 },
+              { "color": "#56A64B", "value": 95 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 35 },
+      "id": 7,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /homolog/)\n  |> keep(columns: [\"_time\", \"build_result\"])\n  |> map(fn: (r) => ({ _time: r._time, _value: if r.build_result == \"SUCCESS\" then 1.0 else 0.0 }))\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _value: r._value * 100.0 }))",
+          "refId": "A"
+        }
+      ],
+      "title": "HML - Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Contagem de builds de homolog por resultado em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "UNSTABLE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ABORTED" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#8E8E8E", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 35 },
+      "id": 8,
+      "options": {
+        "displayMode": "gradient",
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /homolog/)\n  |> group(columns: [\"build_result\"])\n  |> count()\n  |> group()\n  |> keep(columns: [\"build_result\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "HML - Job Count",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              { "fieldName": "build_result", "handlerKey": "field.name" },
+              { "fieldName": "_value", "handlerKey": "field.value" }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Falhas em jobs delivery-*-homolog ao longo do tempo, agrupadas por servico, em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 43 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "import \"strings\"\n\nfrom(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /^delivery-/)\n  |> filter(fn: (r) => r.project_name =~ /homolog/)\n  |> filter(fn: (r) => r.build_result == \"FAILURE\")\n  |> map(fn: (r) => ({ r with service: strings.split(v: r.project_path, t: \"/\")[1] }))\n  |> keep(columns: [\"_time\", \"service\"])\n  |> map(fn: (r) => ({ _time: r._time, service: r.service, _value: 1.0 }))\n  |> group(columns: [\"service\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "HML - Delivery Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Duracao media dos jobs delivery-*-homolog e deploy-*-homolog em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": 3600000,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": 0 }]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "delivery - SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "delivery - FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "deploy - SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "deploy - FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 51 },
+      "id": 13,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_time\")\n  |> filter(fn: (r) => r.project_name =~ /homolog/)\n  |> filter(fn: (r) => r.project_name =~ /^(delivery-|deploy-)/)\n  |> filter(fn: (r) => r.build_result == \"SUCCESS\" or r.build_result == \"FAILURE\")\n  |> map(fn: (r) => ({\n      _time: r._time,\n      _value: float(v: r._value),\n      category: (if r.project_name =~ /^delivery-/ then \"delivery\" else \"deploy\") + \" - \" + r.build_result\n  }))\n  |> group(columns: [\"category\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: true)",
+          "refId": "A"
+        }
+      ],
+      "title": "HML - Mean Time to Delivery & Deploy",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 59 },
+      "id": 23,
+      "title": "Sandbox",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Taxa de sucesso de builds de sandbox em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#E02F44", "value": 0 },
+              { "color": "#FF9830", "value": 50 },
+              { "color": "#73BF69", "value": 80 },
+              { "color": "#56A64B", "value": 95 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 60 },
+      "id": 14,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /sandbox/)\n  |> keep(columns: [\"_time\", \"build_result\"])\n  |> map(fn: (r) => ({ _time: r._time, _value: if r.build_result == \"SUCCESS\" then 1.0 else 0.0 }))\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _value: r._value * 100.0 }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Sandbox - Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Contagem de builds de sandbox por resultado em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "UNSTABLE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ABORTED" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#8E8E8E", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 60 },
+      "id": 15,
+      "options": {
+        "displayMode": "gradient",
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /sandbox/)\n  |> group(columns: [\"build_result\"])\n  |> count()\n  |> group()\n  |> keep(columns: [\"build_result\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "Sandbox - Job Count",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              { "fieldName": "build_result", "handlerKey": "field.name" },
+              { "fieldName": "_value", "handlerKey": "field.value" }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Falhas em jobs delivery-*-sandbox ao longo do tempo, agrupadas por servico, em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": 0 }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 68 },
+      "id": 16,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "import \"strings\"\n\nfrom(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_number\")\n  |> filter(fn: (r) => r.project_name =~ /^delivery-/)\n  |> filter(fn: (r) => r.project_name =~ /sandbox/)\n  |> filter(fn: (r) => r.build_result == \"FAILURE\")\n  |> map(fn: (r) => ({ r with service: strings.split(v: r.project_path, t: \"/\")[1] }))\n  |> keep(columns: [\"_time\", \"service\"])\n  |> map(fn: (r) => ({ _time: r._time, service: r.service, _value: 1.0 }))\n  |> group(columns: [\"service\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "Sandbox - Delivery Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+      "description": "Duracao media dos jobs delivery-*-sandbox e deploy-*-sandbox em todos os namespaces.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": 3600000,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": 0 }]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "delivery - SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "delivery - FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "deploy - SUCCESS" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "deploy - FAILURE" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 76 },
+      "id": 17,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.3.0-pre",
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "bfh788kcgnpc0a" },
+          "query": "from(bucket: \"jenkinsci\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"jenkins_data\")\n  |> filter(fn: (r) => r._field == \"build_time\")\n  |> filter(fn: (r) => r.project_name =~ /sandbox/)\n  |> filter(fn: (r) => r.project_name =~ /^(delivery-|deploy-)/)\n  |> filter(fn: (r) => r.build_result == \"SUCCESS\" or r.build_result == \"FAILURE\")\n  |> map(fn: (r) => ({\n      _time: r._time,\n      _value: float(v: r._value),\n      category: (if r.project_name =~ /^delivery-/ then \"delivery\" else \"deploy\") + \" - \" + r.build_result\n  }))\n  |> group(columns: [\"category\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: true)",
+          "refId": "A"
+        }
+      ],
+      "title": "Sandbox - Mean Time to Delivery & Deploy",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 42,
+  "tags": ["jenkins", "cicd", "microservices", "all-environments"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Jenkins - Pipelines - All Environments",
+  "uid": "jenkins-pipelines-all-environments",
+  "version": 1
+}
